@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>PaySphere | Withdrawal with BDT Conversion</title>
+  <title>PaySphere | Enhanced Agent Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -13,16 +13,74 @@
     .search-suggestions { position: absolute; z-index: 50; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 150px; overflow-y: auto; width: 100%; }
     .invoice-box { max-width: 800px; margin: auto; padding: 20px; border: 1px solid #eee; background: white; }
     .hidden { display: none !important; }
-    .card-hover { transition: transform 0.2s; }
-    .card-hover:hover { transform: translateY(-2px); }
+    .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
     .commission-tier { transition: all 0.2s; }
     .commission-tier:hover { background-color: #f3f4f6; }
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 20px;
+      min-width: 280px;
+      max-width: 350px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+      border-left: 4px solid;
+      backdrop-filter: blur(8px);
+      background: rgba(255,255,255,0.95);
+    }
+    .toast.success { border-left-color: #10b981; }
+    .toast.error { border-left-color: #ef4444; }
+    .toast.info { border-left-color: #3b82f6; }
+    .toast.warning { border-left-color: #f59e0b; }
+    .toast i { font-size: 1.25rem; }
+    .toast .toast-message { flex: 1; font-size: 0.875rem; font-weight: 500; color: #1f2937; }
+    .toast .toast-close { cursor: pointer; color: #9ca3af; transition: color 0.2s; }
+    .toast .toast-close:hover { color: #4b5563; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(100%); }
+    }
+    .modal-overlay {
+      backdrop-filter: blur(4px);
+    }
+    button:active { transform: scale(0.98); }
+    .customers-table-container {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .tab-active {
+      background-color: #4f46e5 !important;
+      color: white !important;
+    }
+    .tab-inactive {
+      background-color: #e5e7eb !important;
+      color: #374151 !important;
+    }
+    .tab-inactive:hover {
+      background-color: #d1d5db !important;
+    }
   </style>
 </head>
 <body class="antialiased">
 
 <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-  <!-- AUTH CONTAINER (unchanged) -->
+  <!-- AUTH CONTAINER -->
   <div id="authContainer" class="flex justify-center items-center min-h-[80vh]">
     <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
       <div class="text-center mb-8">
@@ -35,6 +93,105 @@
         <button id="registerTab" class="w-1/2 py-2 font-semibold text-gray-500">Agent Register</button>
       </div>
       <form id="loginForm" onsubmit="return false;">
+        <div class="mb-4"><label class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="loginEmail" value="nafiz@agent.com" class="mt-1 w-full px-4 py-2 border rounded-lg"></div>
+        <div class="mb-4"><label class="block text-sm font-medium text-gray-700">Password</label><input type="password" id="loginPassword" value="agent123" class="mt-1 w-full px-4 py-2 border rounded-lg"></div>
+        <div class="mb-4"><label class="block text-sm font-medium text-gray-700">Role</label><select id="loginRole" class="w-full px-4 py-2 border rounded-lg"><option value="admin">Admin</option><option value="agent" selected>Agent</option></select></div>
+        <button type="submit" onclick="handleLogin()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold">Login</button>
+        <div class="text-center mt-3"><a href="#" onclick="showForgetPassword()" class="text-sm text-indigo-600 hover:underline">Forget Password?</a></div>
+      </form>
+      <form id="registerForm" class="hidden" onsubmit="return false;">
+        <div class="mb-3"><input type="text" id="regName" placeholder="Full Name" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div class="mb-3"><input type="email" id="regEmail" placeholder="Email Address" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div class="mb-3"><input type="password" id="regPassword" placeholder="Password" class="w-full px-4 py-2 border rounded-lg"></div>
+        <div class="mb-4"><input type="text" id="regPhone" placeholder="Phone Number" class="w-full px-4 py-2 border rounded-lg"></div>
+        <button type="submit" onclick="handleRegister()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-semibold">Register as Agent</button>
+        <p class="text-xs text-gray-400 mt-3 text-center">Registration requires admin approval</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD (unchanged) -->
+  <div id="adminDashboard" class="hidden">
+    <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold"><i class="fas fa-user-shield mr-2 text-indigo-600"></i>Admin Control Hub</h1><button onclick="handleLogout()" class="bg-gray-200 px-4 py-2 rounded-lg">Logout</button></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-indigo-500 card-hover"><div><p class="text-gray-500">Total Agents</p><p id="totalAgentsCount" class="text-3xl font-bold">0</p></div></div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-8 border-emerald-500 card-hover"><div><p class="text-gray-500">Total Customers</p><p id="totalCustomersCount" class="text-3xl font-bold">0</p></div></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-md p-5 mb-8"><h2 class="text-xl font-semibold mb-3"><i class="fas fa-clock text-amber-500"></i> Pending Agent Approvals</h2><div id="pendingAgentsList"></div></div>
+    <div class="bg-white rounded-xl shadow-md p-5 mb-8"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-semibold"><i class="fas fa-list-ul"></i> All Agents</h2><button onclick="openTransactionHistoryModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm"><i class="fas fa-history"></i> All Transactions</button></div><div id="agentsTableBody" class="space-y-2"></div></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="bg-white rounded-xl shadow-md p-5"><h2 class="font-bold text-lg"><i class="fas fa-arrow-up text-green-600"></i> Deposit Requests</h2><div id="depositRequestsList" class="mt-3 space-y-3 max-h-96 overflow-auto"></div></div><div class="bg-white rounded-xl shadow-md p-5"><h2 class="font-bold text-lg"><i class="fas fa-arrow-down text-red-600"></i> Withdrawal History</h2><div id="withdrawRequestsList" class="mt-3 space-y-3 max-h-96 overflow-auto"></div></div></div>
+    <div class="mt-6 bg-white rounded-xl shadow-md p-5"><h2 class="font-semibold text-lg mb-3"><i class="fas fa-exchange-alt text-indigo-500"></i> System Rates</h2><div class="flex gap-4 items-end"><div><label class="block text-sm font-medium">USD to BDT Rate</label><input type="number" id="convRateInput" step="0.01" class="border rounded px-3 py-1 w-32" value="110"></div><button onclick="saveRates()" class="bg-indigo-600 text-white px-4 py-1 rounded-lg">Save Rate</button></div></div>
+    <div class="mt-6 bg-white rounded-xl shadow-md p-5"><h2 class="font-semibold text-lg mb-3"><i class="fas fa-chart-line text-amber-500"></i> Commission Tiers (Reference Only)</h2><p class="text-sm text-gray-500 mb-3">Min/Max in USD | Commission in BDT (not deducted)</p><div id="commissionTiersList" class="space-y-2 mb-3"></div><div class="flex flex-wrap gap-2 mt-2"><input type="number" id="newTierMin" placeholder="Min (USD)" class="border rounded p-2 w-28"><input type="number" id="newTierMax" placeholder="Max (USD)" class="border rounded p-2 w-28"><input type="number" id="newTierCommission" placeholder="Commission (BDT)" class="border rounded p-2 w-36"><button onclick="addCommissionTier()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Add Tier</button></div></div>
+  </div>
+
+  <!-- AGENT DASHBOARD (Updated) -->
+  <div id="agentDashboard" class="hidden">
+    <div class="flex justify-between items-center mb-6"><div><h1 class="text-2xl font-bold"><i class="fas fa-hand-holding-usd text-emerald-600"></i> Agent Workspace</h1><p id="agentWelcomeName" class="text-gray-500"></p></div><button onclick="handleLogout()" class="bg-gray-200 px-4 py-2 rounded-lg">Logout</button></div>
+    <div class="bg-gradient-to-r from-indigo-800 to-indigo-600 rounded-2xl text-white p-6 mb-8 shadow-lg"><p class="opacity-80">Current Wallet Balance</p><p class="text-4xl font-bold">$ <span id="agentWalletAmount">0.00</span></p></div>
+    <div class="flex gap-4 mb-8 flex-wrap"><button onclick="openDepositModal()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold flex-1"><i class="fas fa-plus-circle"></i> Deposit Funds</button><button onclick="openWithdrawModal()" class="bg-amber-600 text-white px-6 py-3 rounded-xl font-semibold flex-1"><i class="fas fa-minus-circle"></i> Withdraw</button><button onclick="openAddCustomerModal()" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold flex-1"><i class="fas fa-user-plus"></i> Add Customer</button></div>
+    
+    <!-- Associated Customers - Table view with scroll -->
+    <div class="bg-white rounded-xl p-5 shadow mb-6">
+      <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h3 class="font-semibold text-lg"><i class="fas fa-users text-indigo-500"></i> Associated Customers</h3>
+        <div class="relative"><i class="fas fa-search absolute left-3 top-3 text-gray-400"></i><input type="text" id="customerSearchInput" placeholder="Search..." class="pl-9 pr-3 py-2 border rounded-lg w-64 text-sm"></div>
+      </div>
+      <div class="customers-table-container overflow-x-auto">
+        <table class="min-w-full bg-white border rounded-lg">
+          <thead class="bg-gray-100 sticky top-0">
+            <tr>
+              <th class="px-4 py-2 text-left text-sm font-semibold">Customer ID</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold">Customer Name</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="agentCustomerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- My Transaction History with Tabs -->
+    <div class="bg-white rounded-xl p-5 shadow">
+      <div class="flex border-b mb-3">
+        <button id="tabDeposit" class="px-4 py-2 font-semibold text-indigo-600 border-b-2 border-indigo-600">Deposit</button>
+        <button id="tabWithdrawal" class="px-4 py-2 font-semibold text-gray-500">Withdrawal</button>
+      </div>
+      <div id="transactionHistoryContainer" class="max-h-80 overflow-auto space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- MODALS (existing) -->
+  <div id="depositModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl max-w-md w-full p-6"><h3 class="text-xl font-bold">Deposit Request</h3><div><div class="mt-3"><label>Payment Method</label><select id="depositMethod" class="w-full border rounded p-2"><option>Bank</option><option>Bkash</option><option>Nagad</option><option>Rocket</option></select></div><div><label>Transaction ID</label><input type="text" id="depositTxnId" class="w-full border rounded p-2"></div><div><label>Transaction File</label><input type="file" id="depositFile" accept=".jpg,.png,.jpeg,.pdf" class="w-full border rounded p-1"></div><div><label>Amount (USD)</label><input type="number" id="depositAmount" step="0.01" class="w-full border rounded p-2"></div><div class="flex gap-3 mt-5"><button onclick="submitDeposit()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg">Submit Request</button><button onclick="closeDepositModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div></div>
+
+  <div id="withdrawModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto"><h3 class="text-xl font-bold">Withdrawal (Auto-approved)</h3><div><div><label>Sender ID (Customer ID)</label><input type="text" id="senderId" class="w-full border rounded p-2" oninput="onSenderIdChange()"></div><div><label>Sender Name</label><input type="text" id="senderName" class="w-full border rounded p-2 bg-gray-50" readonly></div>
+      <div class="mt-3"><label>Receiver (Name or ID)</label><div class="relative"><input type="text" id="receiverSearch" class="w-full border rounded p-2" oninput="filterReceivers()" autocomplete="off"><div id="receiverSuggestions" class="search-suggestions hidden"></div></div></div>
+      <button type="button" onclick="openAddReceiverModal()" class="mt-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-sm"><i class="fas fa-plus"></i> Add Receiver</button>
+      <div class="mt-2"><label>Selected Receiver</label><input type="text" id="selectedReceiverDisplay" readonly placeholder="No receiver selected" class="w-full border rounded p-2 bg-gray-50"></div><input type="hidden" id="selectedReceiverId">
+      <div class="mt-3"><label>Withdraw Method</label><select id="withdrawMethod" class="w-full border rounded p-2"><option>Bank</option><option>Bkash</option><option>Nagad</option><option>Rocket</option></select></div>
+      <div><label>Transaction ID</label><input type="text" id="withdrawTxnId" class="w-full border rounded p-2"></div>
+      <div><label>File</label><input type="file" id="withdrawFile" accept=".jpg,.png,.jpeg,.pdf" class="w-full border rounded p-1"></div>
+      <div><label>Amount (USD)</label><input type="number" id="withdrawAmount" step="0.01" class="w-full border rounded p-2" oninput="updateWithdrawalCalculations()"></div>
+      <div class="grid grid-cols-2 gap-3 mt-3"><div><label>Currency Rate (1 USD → BDT)</label><input type="text" id="displayConvRate" readonly class="bg-gray-100 border p-2 rounded"></div><div><label>Commission Fee (BDT) - Ref</label><input type="text" id="displayCommissionFee" readonly class="bg-gray-100 border p-2 rounded"></div></div>
+      <div class="mt-2"><label>Receiver Gets (BDT)</label><input type="text" id="receiverGetsBDT" readonly class="bg-gray-100 border p-2 rounded w-full"></div>
+      <div class="mt-2 p-2 bg-gray-100 rounded"><p>Amount to Deduct from Wallet: <strong id="walletDeductionDisplay">0.00</strong> $</p></div>
+      <div class="flex gap-3 mt-5"><button onclick="submitWithdrawal()" class="bg-amber-600 text-white px-4 py-2 rounded-lg">Confirm Withdrawal</button><button onclick="closeWithdrawModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div></div>
+
+  <!-- Customer Details Modal -->
+  <div id="customerDetailsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl max-w-md w-full p-6"><h3 class="text-xl font-bold mb-3">Customer Details</h3><div id="customerDetailsContent" class="space-y-2 text-sm"></div><div class="mt-5 flex justify-end"><button onclick="closeCustomerDetailsModal()" class="bg-gray-200 px-5 py-2 rounded-lg">Close</button></div></div></div>
+
+  <!-- Customer Transactions Modal -->
+  <div id="customerTransactionsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[80vh] overflow-y-auto"><div class="flex justify-between"><h3 class="text-xl font-bold mb-3">Customer Transaction History</h3><button onclick="closeCustomerTransactionsModal()" class="text-gray-500 text-2xl">&times;</button></div><div id="customerTransactionsList" class="space-y-2 max-h-96 overflow-auto"></div><div class="mt-4 flex justify-end"><button onclick="closeCustomerTransactionsModal()" class="bg-gray-200 px-5 py-2 rounded-lg">Close</button></div></div></div>
+
+  <!-- Other MODALS (addReceiver, addCustomer, invoice, depositDetails, allTransactions, forget/reset) -->
+  <div id="addReceiverModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl max-w-md w-full p-6"><h3 class="text-xl font-bold">Add Receiver</h3><p id="receiverCustomerInfo" class="text-sm text-gray-500 mb-2"></p><div><div><label>Receiver Name</label><input type="text" id="receiverName" class="w-full border rounded p-2"></div><div><label>Phone Number</label><input type="text" id="receiverPhone" class="w-full border rounded p-2"></div><div class="flex gap-3 mt-5"><button onclick="submitAddReceiver()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Add</button><button onclick="closeAddReceiverModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div></div>
+
+  <div id="addCustomerModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl max-w-md w-full p-6"><h3 class="text-xl font-bold">Add Customer</h3><div><div><label>Full Name</label><input type="text" id="custName" class="w-full border rounded p-2"></div><div><label>Email</label><input type="email" id="custEmail" class="w-full border rounded p-2"></div><div><label>Phone</label><input type="text" id="custPhone" class="w-full border rounded p-2"></div><div><label>Document No</label><input type="text" id="custDocNo" class="w-full border rounded p-2"></div><div class="flex gap-3 mt-5"><button onclick="submitAddCustomer()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Add Customer</button><button onclick="closeAddCustomerModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div></div>
+
+  <div id="invoiceModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl w-full max-w-3xl p-4 max-h-[90vh] overflow-y-auto"><div class="flex justify-between"><h3 class="text-xl font-bold">Invoice</h3><button onclick="closeInvoiceModal()" class="text-gray-500 text-2xl">&times;</button></div><div id="invoiceContent"></div><div class="mt-4 flex justify-end"><button id="downloadInvoiceBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg"><i class="fas fa-download"></i> Download PDF</button></div></div></div>
+
+  <div id="depositDetailsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl max-w-md w-full p-6"><h3 class="text-xl font-bold mb-3">Deposit Details</h3><div id="depositDetailsContent" class="space-y-2 text-sm"></div><div class="mt-4 flex justify-between"><button id="viewFileBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fas fa-file-alt"></i> View File</button><button onclick="closeDepositDetailsModal()" class="bg-gray-200 px-5 py-2 rounded-lg">Close</button></div></div></div>
+
+  <div id="allTransactionsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay"><div class="bg-white rounded-2xl w-full max-w-4xl p      <form id="loginForm" onsubmit="return false;">
         <div class="mb-4"><label class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="loginEmail" value="nafiz@agent.com" class="mt-1 w-full px-4 py-2 border rounded-lg"></div>
         <div class="mb-4"><label class="block text-sm font-medium text-gray-700">Password</label><input type="password" id="loginPassword" value="agent123" class="mt-1 w-full px-4 py-2 border rounded-lg"></div>
         <div class="mb-4"><label class="block text-sm font-medium text-gray-700">Role</label><select id="loginRole" class="w-full px-4 py-2 border rounded-lg"><option value="admin">Admin</option><option value="agent" selected>Agent</option></select></div>
